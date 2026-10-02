@@ -13,43 +13,102 @@
   /** 新增時所屬分類 */
   let addCategoryId = null;
 
-  // —— 全螢幕說明 ————————————————————————————
-  // 不使用瀏覽器 Fullscreen API：iPad Safari 會顯示無法移除的系統灰色 X。
-  // 「全螢幕」僅隱藏底部導覽；要完全無瀏覽器介面請用「加入主畫面」。
+  // —— 瀏覽器全螢幕／橫向鎖定 ——————————————————
 
+  /** iPhone／iPad：Fullscreen API 會顯示無法移除的系統灰色 X */
   function isAppleTouchDevice() {
     const ua = navigator.userAgent || "";
     if (/iPad|iPhone|iPod/.test(ua)) return true;
-    if (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1) return true;
-    // 部分新版 iPad 回報空 platform
-    if (navigator.maxTouchPoints > 1 && /Macintosh/.test(ua)) return true;
-    return false;
+    // iPadOS 13+ 常偽裝成 Mac，用觸控點數判斷
+    return navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1;
   }
 
-  function isStandaloneApp() {
-    return (
-      window.matchMedia("(display-mode: standalone)").matches ||
-      window.navigator.standalone === true
+  function isBrowserFullscreen() {
+    return !!(
+      document.fullscreenElement ||
+      document.webkitFullscreenElement
     );
   }
 
+  /** 進入瀏覽器全螢幕並盡量鎖成橫向（Apple 裝置略過） */
   async function enterBrowserFullscreen() {
-    document.body.classList.remove("is-browser-fs");
+    // Safari／iPad 的系統退出鈕會擋內容，改只用應用內全螢幕頁
+    if (isAppleTouchDevice()) {
+      document.body.classList.remove("is-browser-fs");
+      return;
+    }
+
+    const el = document.documentElement;
+    let entered = false;
+    try {
+      if (!isBrowserFullscreen()) {
+        if (el.requestFullscreen) {
+          await el.requestFullscreen();
+          entered = true;
+        } else if (el.webkitRequestFullscreen) {
+          el.webkitRequestFullscreen();
+          entered = true;
+        }
+      } else {
+        entered = true;
+      }
+    } catch (_) {
+      /* 部分環境會失敗，仍保留應用內全螢幕頁 */
+    }
+
+    if (!entered && !isBrowserFullscreen()) {
+      document.body.classList.remove("is-browser-fs");
+      return;
+    }
+
+    try {
+      if (screen.orientation && screen.orientation.lock) {
+        await screen.orientation.lock("landscape");
+      }
+    } catch (_) {
+      /* 桌面或未支援鎖定時忽略；CSS 會輔助橫向呈現 */
+    }
+    document.body.classList.add("is-browser-fs");
   }
 
+  /** 離開瀏覽器全螢幕並解除方向鎖定 */
   async function exitBrowserFullscreen() {
     document.body.classList.remove("is-browser-fs");
+    try {
+      if (screen.orientation && screen.orientation.unlock) {
+        screen.orientation.unlock();
+      }
+    } catch (_) {
+      /* ignore */
+    }
+    try {
+      if (isBrowserFullscreen()) {
+        if (document.exitFullscreen) await document.exitFullscreen();
+        else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+      }
+    } catch (_) {
+      /* ignore */
+    }
   }
 
-  function installTipHtml() {
-    if (!isAppleTouchDevice() || isStandaloneApp()) return "";
-    if (sessionStorage.getItem("house_fs_tip_dismissed") === "1") return "";
-    return `
-      <div class="fs-tip" id="fs-tip" role="status">
-        <p>若要完全隱藏 Safari 列：點分享 →「加入主畫面」，再從主畫面開啟。</p>
-        <button type="button" class="fs-tip-ok" id="btn-fs-tip-ok">知道了</button>
-      </div>`;
+  /** 系統退出全螢幕（Esc 等）時同步回到主頁 */
+  function onFullscreenChange() {
+    if (!isBrowserFullscreen() && currentPage === "fullscreen") {
+      document.body.classList.remove("is-browser-fs");
+      try {
+        if (screen.orientation && screen.orientation.unlock) {
+          screen.orientation.unlock();
+        }
+      } catch (_) {
+        /* ignore */
+      }
+      currentPage = "home";
+      render();
+    }
   }
+
+  document.addEventListener("fullscreenchange", onFullscreenChange);
+  document.addEventListener("webkitfullscreenchange", onFullscreenChange);
 
   // —— 資料操作 ——————————————————————————————
 
@@ -137,6 +196,20 @@
 
   // —— 手勢：雙擊／長按 ——————————————————————
 
+  // 全域阻擋 Safari 雙擊放大（與物品雙擊減數量衝突）
+  let lastTouchEndAt = 0;
+  document.addEventListener(
+    "touchend",
+    (e) => {
+      const now = Date.now();
+      if (now - lastTouchEndAt < 350) {
+        e.preventDefault();
+      }
+      lastTouchEndAt = now;
+    },
+    { passive: false, capture: true }
+  );
+
   function bindItemGestures(el, itemId, canEdit) {
     let tapCount = 0;
     let tapTimer = null;
@@ -223,6 +296,14 @@
     el.addEventListener("pointerleave", clearLong);
     el.addEventListener("pointercancel", onPointerCancel);
     el.addEventListener("contextmenu", (e) => e.preventDefault());
+    // 物品上再擋一次雙擊放大
+    el.addEventListener(
+      "touchend",
+      (e) => {
+        if (tapCount >= 1) e.preventDefault();
+      },
+      { passive: false }
+    );
     // 桌面滑鼠雙擊備援
     el.addEventListener("dblclick", (e) => {
       e.preventDefault();
@@ -430,7 +511,6 @@
 
   function renderFullscreen() {
     return `
-      ${installTipHtml()}
       <div class="fullscreen-body">
         ${dualColumnsHtml()}
       </div>`;
@@ -481,7 +561,7 @@
       </main>
       ${navHtml()}`;
 
-    // 綁定導覽
+    // 綁定導覽（進入全螢幕時一併呼叫瀏覽器 Fullscreen API）
     appEl.querySelectorAll("[data-nav]").forEach((btn) => {
       btn.addEventListener("click", async () => {
         const next = btn.dataset.nav;
@@ -611,16 +691,6 @@
         await exitBrowserFullscreen();
         currentPage = "home";
         render();
-      });
-    }
-
-    // 加入主畫面提示
-    const tipOk = document.getElementById("btn-fs-tip-ok");
-    if (tipOk) {
-      tipOk.addEventListener("click", () => {
-        sessionStorage.setItem("house_fs_tip_dismissed", "1");
-        const tip = document.getElementById("fs-tip");
-        if (tip) tip.remove();
       });
     }
 
