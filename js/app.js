@@ -123,7 +123,7 @@
       ...item,
       remainingDays: remaining,
       isQuantityAlert:
-        alert.quantityThreshold > 0 && item.quantity < alert.quantityThreshold,
+        alert.quantityThreshold > 0 && item.quantity <= alert.quantityThreshold,
       isExpiryAlert:
         remaining != null &&
         alert.daysThreshold > 0 &&
