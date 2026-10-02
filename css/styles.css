@@ -273,12 +273,14 @@ body.is-fullscreen #app {
 
 .nav-icon { font-size: 1.15rem; line-height: 1; }
 
-/* 全螢幕關閉（小 X） */
+/* 全螢幕關閉（固定在視窗右上角，不隨內容旋轉） */
 .fs-close {
   position: fixed;
   top: calc(6px + var(--safe-top));
   right: 8px;
-  z-index: 40;
+  left: auto;
+  bottom: auto;
+  z-index: 100;
   width: 28px;
   height: 28px;
   border-radius: 50%;

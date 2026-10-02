@@ -461,7 +461,6 @@
 
   function renderFullscreen() {
     return `
-      <button type="button" class="fs-close" id="btn-fs-close" aria-label="離開全螢幕">✕</button>
       <div class="fullscreen-body">
         ${dualColumnsHtml()}
       </div>`;
@@ -499,7 +498,14 @@
     else if (currentPage === "fullscreen") main = renderFullscreen();
     else main = renderCategoryClean(currentPage);
 
+    // 關閉鈕放在旋轉內容外，避免直向全螢幕時跑到左下角
+    const fsCloseHtml =
+      currentPage === "fullscreen"
+        ? `<button type="button" class="fs-close" id="btn-fs-close" aria-label="離開全螢幕">✕</button>`
+        : "";
+
     appEl.innerHTML = `
+      ${fsCloseHtml}
       <main class="page ${currentPage === "fullscreen" ? "page-fullscreen" : ""}">
         ${main}
       </main>
