@@ -15,6 +15,14 @@
 
   // —— 瀏覽器全螢幕／橫向鎖定 ——————————————————
 
+  /** iPhone／iPad：Fullscreen API 會顯示無法移除的系統灰色 X */
+  function isAppleTouchDevice() {
+    const ua = navigator.userAgent || "";
+    if (/iPad|iPhone|iPod/.test(ua)) return true;
+    // iPadOS 13+ 常偽裝成 Mac，用觸控點數判斷
+    return navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1;
+  }
+
   function isBrowserFullscreen() {
     return !!(
       document.fullscreenElement ||
@@ -22,17 +30,37 @@
     );
   }
 
-  /** 進入瀏覽器全螢幕並盡量鎖成橫向 */
+  /** 進入瀏覽器全螢幕並盡量鎖成橫向（Apple 裝置略過） */
   async function enterBrowserFullscreen() {
+    // Safari／iPad 的系統退出鈕會擋內容，改只用應用內全螢幕頁
+    if (isAppleTouchDevice()) {
+      document.body.classList.remove("is-browser-fs");
+      return;
+    }
+
     const el = document.documentElement;
+    let entered = false;
     try {
       if (!isBrowserFullscreen()) {
-        if (el.requestFullscreen) await el.requestFullscreen();
-        else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+        if (el.requestFullscreen) {
+          await el.requestFullscreen();
+          entered = true;
+        } else if (el.webkitRequestFullscreen) {
+          el.webkitRequestFullscreen();
+          entered = true;
+        }
+      } else {
+        entered = true;
       }
     } catch (_) {
-      /* 部分環境（如未允許）會失敗，仍保留應用內全螢幕頁 */
+      /* 部分環境會失敗，仍保留應用內全螢幕頁 */
     }
+
+    if (!entered && !isBrowserFullscreen()) {
+      document.body.classList.remove("is-browser-fs");
+      return;
+    }
+
     try {
       if (screen.orientation && screen.orientation.lock) {
         await screen.orientation.lock("landscape");
