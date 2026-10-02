@@ -471,7 +471,7 @@
     const items = [
       { id: "home", label: "主頁", icon: "⌂" },
       { id: "hall", label: "大廳", icon: "🚪" },
-      { id: "room", label: "房間", icon: "🛏" },
+      { id: "room", label: "雪櫃", icon: "🧊" },
       { id: "kitchen", label: "廚房", icon: "🍳" },
       { id: "bathroom", label: "廁所", icon: "🛁" },
       { id: "fullscreen", label: "全螢幕", icon: "⛶" }

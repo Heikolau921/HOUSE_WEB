@@ -36,7 +36,7 @@ const DateUtils = {
 /** 分類定義 */
 const CATEGORIES = [
   { id: "hall", name: "大廳" },
-  { id: "room", name: "房間" },
+  { id: "room", name: "雪櫃" },
   { id: "kitchen", name: "廚房" },
   { id: "bathroom", name: "廁所" }
 ];
