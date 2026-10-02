@@ -173,6 +173,10 @@
     let tapTimer = null;
     let longTimer = null;
     let longFired = false;
+    let startX = 0;
+    let startY = 0;
+    let activePointerId = null;
+    let lastDecreaseAt = 0;
 
     const clearLong = () => {
       if (longTimer) {
@@ -181,8 +185,26 @@
       }
     };
 
-    const onPointerDown = () => {
+    /** 避免 pointer 雙擊與 dblclick 各減一次 */
+    const doDecrease = () => {
+      const now = Date.now();
+      if (now - lastDecreaseAt < 400) return;
+      lastDecreaseAt = now;
+      decreaseQuantity(itemId);
+    };
+
+    const movedTooFar = (x, y) => {
+      const dx = x - startX;
+      const dy = y - startY;
+      return dx * dx + dy * dy > 100; // 超過約 10px 視為捲動
+    };
+
+    const onPointerDown = (e) => {
+      if (e.pointerType === "mouse" && e.button !== 0) return;
+      activePointerId = e.pointerId;
       longFired = false;
+      startX = e.clientX;
+      startY = e.clientY;
       longTimer = setTimeout(() => {
         longFired = true;
         tapCount = 0;
@@ -190,34 +212,53 @@
       }, 550);
     };
 
+    const onPointerMove = (e) => {
+      if (activePointerId !== e.pointerId) return;
+      if (movedTooFar(e.clientX, e.clientY)) clearLong();
+    };
+
     const onPointerUp = (e) => {
+      if (activePointerId !== e.pointerId) return;
+      activePointerId = null;
       clearLong();
       if (longFired) {
         e.preventDefault();
         return;
       }
+      // 捲動列表時不計入點擊
+      if (movedTooFar(e.clientX, e.clientY)) return;
+
       tapCount += 1;
       if (tapCount === 1) {
+        // 觸控雙擊間隔放寬，較好點
         tapTimer = setTimeout(() => {
           tapCount = 0;
-        }, 300);
+        }, 450);
       } else if (tapCount >= 2) {
         clearTimeout(tapTimer);
         tapCount = 0;
-        decreaseQuantity(itemId);
+        doDecrease();
       }
     };
 
-    const onPointerCancel = () => {
+    const onPointerCancel = (e) => {
+      if (activePointerId != null && e.pointerId !== activePointerId) return;
+      activePointerId = null;
       clearLong();
-      tapCount = 0;
     };
 
     el.addEventListener("pointerdown", onPointerDown);
+    el.addEventListener("pointermove", onPointerMove);
     el.addEventListener("pointerup", onPointerUp);
-    el.addEventListener("pointerleave", onPointerCancel);
+    // 注意：觸控在 pointerup 後常會再觸發 pointerleave，不可因此清掉 tapCount
+    el.addEventListener("pointerleave", clearLong);
     el.addEventListener("pointercancel", onPointerCancel);
     el.addEventListener("contextmenu", (e) => e.preventDefault());
+    // 桌面滑鼠雙擊備援
+    el.addEventListener("dblclick", (e) => {
+      e.preventDefault();
+      doDecrease();
+    });
   }
 
   // —— 對話框 ————————————————————————————————
