@@ -1,0 +1,22 @@
+{
+  "name": "家用物品提醒",
+  "short_name": "家用提醒",
+  "description": "家用物品到期與剩餘數量提醒（免安裝網頁版）",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#FFFBFE",
+  "theme_color": "#6750A4",
+  "lang": "zh-Hant",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

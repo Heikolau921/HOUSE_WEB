@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="家用物品提醒" />
+  <meta name="theme-color" content="#6750A4" />
+  <title>家用物品提醒</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div id="app">
+    <!-- 主內容區由 JS 渲染 -->
+  </div>
+
+  <!-- 編輯／新增對話框 -->
+  <dialog id="item-dialog">
+    <form method="dialog" id="item-form">
+      <h2 id="dialog-title">新增物品</h2>
+      <label>
+        物品名稱
+        <input type="text" id="field-name" required maxlength="80" autocomplete="off" />
+      </label>
+      <label>
+        剩餘數量
+        <input type="number" id="field-quantity" min="0" step="1" required inputmode="numeric" />
+      </label>
+      <label>
+        到期日子（可留空）
+        <div class="date-row">
+          <input type="date" id="field-expiry" />
+          <button type="button" id="btn-clear-expiry" class="btn-text">清除</button>
+        </div>
+      </label>
+      <label>
+        剩餘多少天（自動計算）
+        <input type="text" id="field-remaining" readonly />
+      </label>
+      <p id="dialog-error" class="error" hidden></p>
+      <div class="dialog-actions">
+        <button type="button" id="btn-cancel" class="btn-secondary">取消</button>
+        <button type="submit" class="btn-primary">儲存</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="js/utils.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
