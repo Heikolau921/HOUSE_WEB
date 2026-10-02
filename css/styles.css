@@ -305,26 +305,52 @@ body.is-fullscreen #app {
   padding-top: 4px;
 }
 
-/*
- * 無法鎖定螢幕方向時（常見於桌面／部分瀏覽器）：
- * 直向全螢幕改以旋轉內容模擬橫向。
- */
+/* iPad：建議加入主畫面的提示 */
+.fs-tip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #efe7f5;
+  color: var(--on-surface);
+  font-size: 0.85rem;
+  line-height: 1.35;
+}
+
+.fs-tip p {
+  margin: 0;
+  flex: 1;
+}
+
+.fs-tip-ok {
+  flex-shrink: 0;
+  border: none;
+  border-radius: 999px;
+  padding: 8px 12px;
+  background: var(--primary);
+  color: #fff;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+/* 全螢幕直向時改為上下雙欄，避免擠在一起 */
 @media (orientation: portrait) {
-  body.is-fullscreen.is-browser-fs .page-fullscreen {
-    width: 100dvh;
-    height: 100dvw;
-    max-width: none;
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%) rotate(90deg);
-    transform-origin: center center;
-    padding: 8px 12px;
-    box-sizing: border-box;
+  body.is-fullscreen .page-fullscreen .dual {
+    flex-direction: column;
+    height: auto;
+    min-height: calc(100dvh - 48px);
   }
 
-  body.is-fullscreen.is-browser-fs .page-fullscreen .dual {
-    height: calc(100dvw - 36px);
+  body.is-fullscreen .page-fullscreen .dual-divider {
+    width: auto;
+    height: 1px;
+    margin: 8px 0;
+  }
+
+  body.is-fullscreen .page-fullscreen .dual-list {
+    max-height: 42dvh;
   }
 }
 

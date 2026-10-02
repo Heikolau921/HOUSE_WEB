@@ -4,6 +4,8 @@
   "description": "家用物品到期與剩餘數量提醒（免安裝網頁版）",
   "start_url": "./index.html",
   "display": "standalone",
+  "display_override": ["standalone", "browser"],
+  "orientation": "any",
   "background_color": "#FFFBFE",
   "theme_color": "#6750A4",
   "lang": "zh-Hant",
