@@ -12,6 +12,8 @@
   let editingId = null;
   /** 新增時所屬分類 */
   let addCategoryId = null;
+  /** 主頁／全螢幕分類篩選；null 表示顯示全部 */
+  let selectedCategoryFilter = null;
 
   // —— 瀏覽器全螢幕／橫向鎖定 ——————————————————
 
@@ -131,11 +133,17 @@
     };
   }
 
+  /** 是否符合目前選取的分類篩選 */
+  function matchesCategoryFilter(item) {
+    return !selectedCategoryFilter || item.category === selectedCategoryFilter;
+  }
+
   function quantityColumnItems() {
     const filters = Storage.getFilters();
     const qty = filters.quantity === "" ? null : Number(filters.quantity);
     return allItems()
       .map(enrich)
+      .filter(matchesCategoryFilter)
       .filter((i) => qty == null || Number.isNaN(qty) || i.quantity <= qty)
       .sort((a, b) => a.quantity - b.quantity || a.name.localeCompare(b.name, "zh-Hant"));
   }
@@ -145,6 +153,7 @@
     const days = filters.days === "" ? null : Number(filters.days);
     return allItems()
       .map(enrich)
+      .filter(matchesCategoryFilter)
       .filter((i) => i.remainingDays != null)
       .filter((i) => days == null || Number.isNaN(days) || i.remainingDays <= days)
       .sort(
@@ -174,6 +183,7 @@
         id: createId(),
         name: data.name,
         quantity: data.quantity,
+        madeDate: data.madeDate,
         expiryDate: data.expiryDate,
         category: data.category
       });
@@ -326,6 +336,7 @@
     document.getElementById("dialog-title").textContent = "新增物品";
     document.getElementById("field-name").value = "";
     document.getElementById("field-quantity").value = "";
+    document.getElementById("field-made").value = "";
     document.getElementById("field-expiry").value = "";
     document.getElementById("dialog-error").hidden = true;
     updateRemainingPreview();
@@ -341,6 +352,7 @@
     document.getElementById("dialog-title").textContent = "修改物品";
     document.getElementById("field-name").value = item.name;
     document.getElementById("field-quantity").value = String(item.quantity);
+    document.getElementById("field-made").value = item.madeDate || "";
     document.getElementById("field-expiry").value = item.expiryDate || "";
     document.getElementById("dialog-error").hidden = true;
     updateRemainingPreview();
@@ -351,6 +363,7 @@
     e.preventDefault();
     const name = document.getElementById("field-name").value.trim();
     const quantity = Number(document.getElementById("field-quantity").value);
+    const madeRaw = document.getElementById("field-made").value;
     const expiryRaw = document.getElementById("field-expiry").value;
     const err = document.getElementById("dialog-error");
     if (!name) {
@@ -367,6 +380,7 @@
       id: editingId,
       name,
       quantity: Math.floor(quantity),
+      madeDate: madeRaw || null,
       expiryDate: expiryRaw || null,
       category: addCategoryId
     });
@@ -375,6 +389,9 @@
   });
 
   document.getElementById("btn-cancel").addEventListener("click", () => dialog.close());
+  document.getElementById("btn-clear-made").addEventListener("click", () => {
+    document.getElementById("field-made").value = "";
+  });
   document.getElementById("btn-clear-expiry").addEventListener("click", () => {
     document.getElementById("field-expiry").value = "";
     updateRemainingPreview();
@@ -385,16 +402,21 @@
 
   function qtyTileHtml(item) {
     const qtyClass = item.isQuantityAlert ? "alert" : "";
+    const made = item.madeDate || "—";
     return `
       <article class="tile tile-qty" data-id="${escapeHtml(item.id)}">
-        <span class="tile-name">${escapeHtml(item.name)}</span>
-        <span class="tile-mid ${qtyClass}">數量 ${item.quantity}</span>
-        <span class="tile-cat">${escapeHtml(CATEGORY_MAP[item.category] || "")}</span>
+        <div class="row1">
+          <span class="tile-name">${escapeHtml(item.name)}</span>
+          <span class="tile-mid ${qtyClass}">${item.quantity}</span>
+          <span class="tile-cat">${escapeHtml(CATEGORY_MAP[item.category] || "")}</span>
+        </div>
+        <div class="row2">${escapeHtml(made)}</div>
       </article>`;
   }
 
   function expiryTileHtml(item) {
     const cls = item.isExpiryAlert ? "alert" : "";
+    const made = item.madeDate || "—";
     return `
       <article class="tile tile-expiry" data-id="${escapeHtml(item.id)}">
         <div class="row1">
@@ -402,26 +424,52 @@
           <span class="tile-cat">${escapeHtml(CATEGORY_MAP[item.category] || "")}</span>
           <span class="tile-days ${cls}">${escapeHtml(DateUtils.remainingLabel(item.remainingDays))}</span>
         </div>
-        <div class="row2 ${cls}">${escapeHtml(item.expiryDate || "")}</div>
+        <div class="row2">
+          <span class="tile-made">${escapeHtml(made)}</span>
+          <span class="${cls}">${escapeHtml(item.expiryDate || "")}</span>
+        </div>
       </article>`;
+  }
+
+  /** 分類篩選按鈕；再按一次同一分類會取消 */
+  function catFilterButtonsHtml(ids) {
+    return ids
+      .map((id) => {
+        const cat = CATEGORIES.find((c) => c.id === id);
+        if (!cat) return "";
+        const active = selectedCategoryFilter === id;
+        return `
+          <button type="button" class="cat-filter ${active ? "active" : ""}" data-cat-filter="${id}" aria-pressed="${active}">
+            ${escapeHtml(cat.name)}
+          </button>`;
+      })
+      .join("");
   }
 
   function dualColumnsHtml() {
     const left = quantityColumnItems();
     const right = expiryColumnItems();
+    const emptyLeft = selectedCategoryFilter ? "此分類尚無物品" : "尚無物品";
+    const emptyRight = selectedCategoryFilter ? "此分類尚無到期物品" : "尚無到期物品";
     return `
       <div class="dual">
         <div class="dual-col">
-          <h3 class="dual-title">數量</h3>
+          <div class="dual-head dual-head-left">
+            <h3 class="dual-title">數量</h3>
+            <div class="cat-filters">${catFilterButtonsHtml(["hall", "room"])}</div>
+          </div>
           <div class="dual-list" data-col="qty">
-            ${left.length ? left.map(qtyTileHtml).join("") : `<p class="empty">尚無物品</p>`}
+            ${left.length ? left.map(qtyTileHtml).join("") : `<p class="empty">${emptyLeft}</p>`}
           </div>
         </div>
         <div class="dual-divider"></div>
         <div class="dual-col">
-          <h3 class="dual-title">到期日</h3>
+          <div class="dual-head dual-head-right">
+            <div class="cat-filters">${catFilterButtonsHtml(["kitchen", "bathroom"])}</div>
+            <h3 class="dual-title">到期日</h3>
+          </div>
           <div class="dual-list" data-col="expiry">
-            ${right.length ? right.map(expiryTileHtml).join("") : `<p class="empty">尚無到期物品</p>`}
+            ${right.length ? right.map(expiryTileHtml).join("") : `<p class="empty">${emptyRight}</p>`}
           </div>
         </div>
       </div>`;
@@ -495,6 +543,7 @@
               <div class="item-main">
                 <strong>${escapeHtml(item.name)}</strong>
                 <div class="${qtyCls}">剩餘數量：${item.quantity}</div>
+                <div>製造日期：${item.madeDate ? escapeHtml(item.madeDate) : "無"}</div>
                 <div>到期日子：${item.expiryDate ? escapeHtml(item.expiryDate) : "無"}</div>
                 <div class="${dayCls}">剩餘多少天：${escapeHtml(categoryRemainingText(item))}</div>
               </div>
@@ -693,6 +742,15 @@
         render();
       });
     }
+
+    // 分類篩選：再按同一分類即取消
+    appEl.querySelectorAll("[data-cat-filter]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const id = btn.dataset.catFilter;
+        selectedCategoryFilter = selectedCategoryFilter === id ? null : id;
+        render();
+      });
+    });
 
     // 雙欄手勢
     if (currentPage === "home" || currentPage === "fullscreen") {

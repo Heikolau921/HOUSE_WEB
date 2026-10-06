@@ -115,8 +115,56 @@ body.is-fullscreen #app {
 
 .dual-title {
   text-align: center;
-  margin: 0 0 8px;
+  margin: 0;
   font-size: 1.05rem;
+  flex: 0 0 auto;
+}
+
+.dual-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 8px;
+  min-height: 36px;
+}
+
+.dual-head-left {
+  justify-content: space-between;
+}
+
+.dual-head-right {
+  justify-content: space-between;
+}
+
+.page-fullscreen .dual-head-right {
+  padding-right: 36px; /* 避開右上角關閉鈕 */
+}
+
+.cat-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+}
+
+.cat-filter {
+  appearance: none;
+  background: #fff;
+  color: var(--on-surface);
+  border: 1.5px solid #1c1b1f;
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 0.85rem;
+  line-height: 1.2;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.cat-filter.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+  font-weight: 600;
 }
 
 .dual-divider {
@@ -144,16 +192,21 @@ body.is-fullscreen #app {
 }
 
 .tile-qty {
+  display: block;
+  font-size: 0.88rem;
+}
+
+.tile-qty .row1 {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
   align-items: center;
   gap: 4px;
-  font-size: 0.88rem;
 }
 
 .tile-qty .tile-name { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.tile-qty .tile-mid { text-align: center; }
+.tile-qty .tile-mid { text-align: center; font-variant-numeric: tabular-nums; }
 .tile-qty .tile-cat { text-align: right; color: var(--muted); font-size: 0.8rem; }
+.tile-qty .row2 { text-align: left; font-size: 0.78rem; margin-top: 2px; color: var(--muted); }
 
 .tile-expiry .row1 {
   display: grid;
@@ -166,7 +219,14 @@ body.is-fullscreen #app {
 .tile-expiry .tile-name { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tile-expiry .tile-cat { text-align: center; color: var(--muted); font-size: 0.8rem; }
 .tile-expiry .tile-days { text-align: right; }
-.tile-expiry .row2 { text-align: right; font-size: 0.78rem; margin-top: 2px; }
+.tile-expiry .row2 {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.78rem;
+  margin-top: 2px;
+}
+.tile-expiry .tile-made { color: var(--muted); }
 
 .empty {
   text-align: center;

@@ -10,7 +10,7 @@
   <title>家用物品提醒</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
-  <link rel="stylesheet" href="css/styles.css?v=20261002d" />
+  <link rel="stylesheet" href="css/styles.css?v=20261006c" />
 </head>
 <body>
   <div id="app">
@@ -28,6 +28,13 @@
       <label>
         剩餘數量
         <input type="number" id="field-quantity" min="0" step="1" required inputmode="numeric" />
+      </label>
+      <label>
+        製造日期（可留空）
+        <div class="date-row">
+          <input type="date" id="field-made" />
+          <button type="button" id="btn-clear-made" class="btn-text">清除</button>
+        </div>
       </label>
       <label>
         到期日子（可留空）
@@ -48,8 +55,8 @@
     </form>
   </dialog>
 
-  <script src="js/utils.js?v=20261002d"></script>
-  <script src="js/storage.js?v=20261002d"></script>
-  <script src="js/app.js?v=20261002d"></script>
+  <script src="js/utils.js?v=20261006c"></script>
+  <script src="js/storage.js?v=20261006c"></script>
+  <script src="js/app.js?v=20261006c"></script>
 </body>
 </html>
